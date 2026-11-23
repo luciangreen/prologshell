@@ -1,0 +1,5 @@
+#!/bin/sh
+# Test stand-in for scp: "host:path" names a path on this machine.
+[ "$1" = "-q" ] && shift
+src="${1#*:}"; dst="${2#*:}"
+exec cp "$src" "$dst"
