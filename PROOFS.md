@@ -1,6 +1,6 @@
-# Shellog proofs
+# Prologshell proofs
 
-`proofs/shellog_proofs.pl` checks every theorem below exhaustively over a bounded domain:
+`proofs/prologshell_proofs.pl` checks every theorem below exhaustively over a bounded domain:
 
 - line lists of length 0 to 4 over `["", "a", "b", "ab", "b a", "A,b"]` (1,555 lists)
 - counts from −1 to 6

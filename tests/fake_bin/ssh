@@ -1,10 +1,10 @@
 #!/bin/sh
 # Test stand-in for ssh: "ssh HOST CMD" runs CMD here with /bin/sh,
-# exactly as sshd would on the server.  SHELLOG_LIB points the remote
+# exactly as sshd would on the server.  PROLOGSHELL_LIB points the remote
 # swipl at this checkout's prolog/ directory.
 host="$1"; shift
 cmd="$*"
 case "$cmd" in
-  "swipl "*) cmd="swipl -p library=$SHELLOG_LIB ${cmd#swipl }" ;;
+  "swipl "*) cmd="swipl -p library=$PROLOGSHELL_LIB ${cmd#swipl }" ;;
 esac
 exec /bin/sh -c "$cmd"

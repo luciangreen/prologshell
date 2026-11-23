@@ -1,4 +1,4 @@
-/*  run_tests.pl -- run the 200 Shellog input/output pairs.
+/*  run_tests.pl -- run the 200 Prologshell input/output pairs.
 
     swipl tests/run_tests.pl            (from the repository root)
 
@@ -13,26 +13,26 @@
    file_directory_name(D, Root),
    directory_file_path(Root, prolog, Lib),
    asserta(user:file_search_path(library, Lib)),
-   asserta(user:shellog_root(Root)).
+   asserta(user:prologshell_root(Root)).
 
-:- use_module(library(shellog)).
+:- use_module(library(prologshell)).
 :- use_module(fixture).
 :- use_module(io_pairs).
 
 :- dynamic starlog_mode/0.
 
 main :-
-    shellog_root(Root),
+    prologshell_root(Root),
     setup_env(Root),
     directory_file_path(Root, 'tests/sandbox', Box),
     (   catch(use_module(library(starlog)), _, fail),
-        shellog_starlog
+        prologshell_starlog
     ->  assertz(starlog_mode), Modes = [sh, starlog]
     ;   Modes = [sh]
     ),
     findall(C-E, io(C, E), Pairs),
     length(Pairs, N),
-    format("Shellog: ~w input/output pairs, modes ~w~n", [N, Modes]),
+    format("Prologshell: ~w input/output pairs, modes ~w~n", [N, Modes]),
     working_directory(Old, Old),
     findall(F, ( nth1(I, Pairs, C-E), member(M, Modes),
                  \+ run_pair(Box, M, I, C, E), F = I-M ), Fails),
@@ -51,8 +51,8 @@ setup_env(Root) :-
     getenv('PATH', P0),
     atomic_list_concat([Bin, ':', P0], P),
     setenv('PATH', P),
-    setenv('SHELLOG_LIB', Lib),
-    setenv('SHELLOG_TEST', yes).
+    setenv('PROLOGSHELL_LIB', Lib),
+    setenv('PROLOGSHELL_TEST', yes).
 
 run_pair(Box, Mode, I, Chain, Expected) :-
     working_directory(_, '/'),

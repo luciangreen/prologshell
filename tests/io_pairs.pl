@@ -1,8 +1,8 @@
-/*  io_pairs.pl -- 200 input/output pairs for Shellog.
+/*  io_pairs.pl -- 200 input/output pairs for Prologshell.
 
     io(Chain, Expected): evaluating Chain inside a fresh sandbox (see
     fixture.pl) must give exactly Expected (compared with ==).
-    Each pair runs twice: with Shellog's sh/2 and, when Starlog is
+    Each pair runs twice: with Prologshell's sh/2 and, when Starlog is
     installed, as the Starlog goal  X is Chain.
     Remote pairs use the host "test@fake", served by tests/fake_bin/ssh
     and scp, which run the command locally exactly as a server would.
@@ -222,8 +222,8 @@ io(ext("sub/c.pl"), "pl").
 io(exists("nope"), false).
 io(run("echo hi"), ["hi"]).
 io(run("printf 'a\\nb\\n'") >> tac, ["b","a"]).
-io(env("SHELLOG_TEST"), "yes").
-io(env("SHELLOG_UNSET_VAR"), "").
+io(env("PROLOGSHELL_TEST"), "yes").
+io(env("PROLOGSHELL_UNSET_VAR"), "").
 io(ssh(local, "echo local"), ["local"]).
 io(no_eval(cat("a.txt") >> wc_l) >> on(local), 3).
 io(ssh("test@fake", "echo remote"), ["remote"]).

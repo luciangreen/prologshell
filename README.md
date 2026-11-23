@@ -1,6 +1,6 @@
-# Shellog
+# Prologshell
 
-Shellog replaces bash with Prolog. Shell commands such as `ls`, `cat`, `grep`, `sort`, `cp` and `ssh` become value-returning Prolog predicates. They chain left to right with Starlog's `>>` method-chain operator, so a bash pipeline becomes a Prolog expression, and the same chain can run on a server.
+Prologshell replaces bash with Prolog. Shell commands such as `ls`, `cat`, `grep`, `sort`, `cp` and `ssh` become value-returning Prolog predicates. They chain left to right with Starlog's `>>` method-chain operator, so a bash pipeline becomes a Prolog expression, and the same chain can run on a server.
 
 ```prolog
 % bash:  cat a.txt | grep an | wc -l
@@ -13,26 +13,26 @@ Pages is no_eval(ls("/var/www") >> grep("html")) >> on("me@web").
 ## Installation
 
 ```prolog
-?- pack_install(shellog, [url('https://github.com/luciangreen/shellog.git')]).
+?- pack_install(prologshell, [url('https://github.com/luciangreen/prologshell.git')]).
 ?- pack_install(starlog, [url('https://github.com/luciangreen/starlog.git')]).   % optional, for X is ... syntax
 ```
 
 ```prolog
-?- use_module(library(shellog)).
+?- use_module(library(prologshell)).
 ```
 
-Starlog is optional. Without it, use Shellog's own evaluator `sh/2`, which runs the same chains:
+Starlog is optional. Without it, use Prologshell's own evaluator `sh/2`, which runs the same chains:
 
 ```prolog
 ?- sh(cat("a.txt") >> grep("an") >> wc_l, N).
 ?- sh("." >> ls).                 % sh/1 prints the result like bash
 ```
 
-If Starlog is installed, Shellog registers its commands with Starlog when it loads, so `X is ...` works in your files and at the REPL (load `library(starlog)` before your own code).
+If Starlog is installed, Prologshell registers its commands with Starlog when it loads, so `X is ...` works in your files and at the REPL (load `library(starlog)` before your own code).
 
 ## How a chain runs
 
-Shellog follows the Starlog convention for value-returning predicates:
+Prologshell follows the Starlog convention for value-returning predicates:
 
 | Form | Calls |
 |---|---|
@@ -43,9 +43,9 @@ Shellog follows the Starlog convention for value-returning predicates:
 
 **Pipe values.** Line-oriented commands take and return a list of strings, one per line. A string, atom or number given as input is split into lines first, so `"a\nb" >> wc_l` gives `2`. Counts come back as numbers, and paths as strings. `text/2` turns lines back into one newline-terminated string.
 
-## Bash to Shellog
+## Bash to Prologshell
 
-| bash | Shellog |
+| bash | Prologshell |
 |---|---|
 | `pwd` | `pwd(D)` |
 | `cd dir` | `_ is "dir" >> cd` |
@@ -87,7 +87,7 @@ You can use the commands as ordinary predicates too: `cat("a.txt", Lines)`, `gre
 
 ## Servers
 
-| bash | Shellog |
+| bash | Prologshell |
 |---|---|
 | `ssh host 'cmd'` | `ssh("me@host", "cmd")` |
 | `scp f host:/path` | `"f" >> scp_put("me@host", "/path")` |
@@ -95,7 +95,7 @@ You can use the commands as ordinary predicates too: `cat("a.txt", Lines)`, `gre
 | run a whole pipeline on host | `on("me@host", Chain)` |
 | send local data to host and continue there | `In >> on("me@host", Chain)` |
 
-`on/3` serialises the chain, runs it with `swipl` and `library(shellog)` on the server over `ssh`, and reads the result back as a Prolog term. That means remote results are real lists and numbers, not text to re-parse. The server needs SWI-Prolog with Shellog installed. Use the host `local` to run the same code locally; the proofs check that both give the same results.
+`on/3` serialises the chain, runs it with `swipl` and `library(prologshell)` on the server over `ssh`, and reads the result back as a Prolog term. That means remote results are real lists and numbers, not text to re-parse. The server needs SWI-Prolog with Prologshell installed. Use the host `local` to run the same code locally; the proofs check that both give the same results.
 
 Arguments to `ssh` are passed as an argument vector, not through a local shell. The remote goal is quoted with `shell_quote/2`, which the proofs check against `/bin/sh`.
 
@@ -108,7 +108,7 @@ Y is cat("local.txt") >> on("me@web", no_eval(sort_u >> join(","))).
 
 ## Example script
 
-`examples/backup.pl` is a bash backup script rewritten as a Shellog program:
+`examples/backup.pl` is a bash backup script rewritten as a Prologshell program:
 
 ```prolog
 main([Dir]) :-
@@ -137,16 +137,16 @@ swipl tests/run_tests.pl
 ## Proofs
 
 ```
-swipl proofs/shellog_proofs.pl
+swipl proofs/prologshell_proofs.pl
 ```
 
 The proof script checks 35 theorems exhaustively over bounded domains (over 600,000 cases in all). They cover chain associativity, chains as nested application, `lines`/`text` round trips, involutions (`tac`, `rev`), the idempotence of `sort_lines` and `uniq`, the partition of lines by `grep`/`grep_v`, and the `head_n`/`tail_n` laws. They also cover file round trips (`write_to`/`cat`, `cp`, `mv`, `tee`), the soundness of `shell_quote` against `/bin/sh`, agreement between local and remote runs, and Starlog/`sh` equivalence. [PROOFS.md](PROOFS.md) gives the general induction argument for each theorem.
 
 ## Notes
 
-- Starlog finds a value builtin by name without its arity and commits to the first entry it finds. Registering two arities of one name would hide one of them, so Shellog registers each name once. This is why `seq 2 4` is `range(2, 4)` rather than `seq(2, 4)`. Fixing `compile_starlog_expr` in Starlog to compute the arity before looking up the name would remove this limit.
+- Starlog finds a value builtin by name without its arity and commits to the first entry it finds. Registering two arities of one name would hide one of them, so Prologshell registers each name once. This is why `seq 2 4` is `range(2, 4)` rather than `seq(2, 4)`. Fixing `compile_starlog_expr` in Starlog to compute the arity before looking up the name would remove this limit.
 - `sed/4` and `grep/3` match literal text, and `grep_glob/3` matches whole lines against a wildcard.
-- See also [List Prolog Interpreter](https://github.com/luciangreen/listprologinterpreter), whose `shell`, `open_file_s`, `directory_files` and `exists_file` commands Shellog's file commands follow, and [Starlog](https://github.com/luciangreen/starlog).
+- See also [List Prolog Interpreter](https://github.com/luciangreen/listprologinterpreter), whose `shell`, `open_file_s`, `directory_files` and `exists_file` commands Prologshell's file commands follow, and [Starlog](https://github.com/luciangreen/starlog).
 
 ## License
 

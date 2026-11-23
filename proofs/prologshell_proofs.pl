@@ -1,6 +1,6 @@
-/*  shellog_proofs.pl -- machine-checked properties of Shellog.
+/*  prologshell_proofs.pl -- machine-checked properties of Prologshell.
 
-    swipl proofs/shellog_proofs.pl      (from the repository root)
+    swipl proofs/prologshell_proofs.pl      (from the repository root)
 
     Each theorem is a universally quantified property.  The general
     argument (by structural induction) is in PROOFS.md; here every
@@ -20,9 +20,9 @@
    file_directory_name(D, Root),
    directory_file_path(Root, prolog, Lib),
    asserta(user:file_search_path(library, Lib)),
-   asserta(user:shellog_root(Root)).
+   asserta(user:prologshell_root(Root)).
 
-:- use_module(library(shellog)).
+:- use_module(library(prologshell)).
 :- use_module(library(lists)).
 :- use_module(library(apply)).
 :- use_module(library(aggregate)).
@@ -75,8 +75,8 @@ theorem(Name, Gen0, Prop0) :-
 		 *******************************/
 
 main :-
-    shellog_root(Root),
-    format("Shellog proofs~n"),
+    prologshell_root(Root),
+    format("Prologshell proofs~n"),
     % --- the evaluator --------------------------------------------------
     theorem('T1  chains are associative: (A>>M1)>>M2 = A>>(M1>>M2)',
         ( line_list(L), method(M1), method(M2) ),
@@ -190,7 +190,7 @@ main :-
         ( sh(L >> M, X), on("test@fake", L >> M, Y), X == Y )),
     % --- Starlog compatibility --------------------------------------------
     (   catch(use_module(library(starlog)), _, fail)
-    ->  shellog_starlog,
+    ->  prologshell_starlog,
         theorem('T35 Starlog X is A>>M1>>M2 = sh(A>>M1>>M2)',
             ( line_list(L), length(L, N), N =< 2, method(M1), method(M2) ),
             ( starlog_expand:expand_starlog_goal((X is L >> M1 >> M2), Goal),
@@ -231,4 +231,4 @@ fake_server(Root) :-
     getenv('PATH', P0),
     atomic_list_concat([Bin, ':', P0], P),
     setenv('PATH', P),
-    setenv('SHELLOG_LIB', Lib).
+    setenv('PROLOGSHELL_LIB', Lib).

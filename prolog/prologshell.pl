@@ -1,6 +1,6 @@
-/*  shellog.pl -- replace bash with Prolog.
+/*  prologshell.pl -- replace bash with Prolog.
 
-    Shellog provides shell commands as value-returning Prolog predicates
+    Prologshell provides shell commands as value-returning Prolog predicates
     that follow the Starlog convention:
 
         Out is cmd(Args...)           ==>  cmd(Args..., Out)
@@ -9,7 +9,7 @@
     so every command can be used
       * directly from Prolog            cat("a.txt", Lines)
       * as a Starlog method chain       X is cat("a.txt") >> grep("an") >> wc_l
-      * with Shellog's own evaluator    sh(cat("a.txt") >> grep("an") >> wc_l, X)
+      * with Prologshell's own evaluator    sh(cat("a.txt") >> grep("an") >> wc_l, X)
       * on a server                     sh(on("me@host", ls("/var/www")), X)
 
     Pipe values
@@ -22,9 +22,9 @@
     Author: Lucian Green.  License: BSD-3-Clause.
 */
 
-:- module(shellog, [
+:- module(prologshell, [
     % evaluator
-    sh/2, sh/1, shellog_command/2, shellog_starlog/0,
+    sh/2, sh/1, prologshell_command/2, prologshell_starlog/0,
     % pipe values
     lines/2, text/2, echo/2, join/3, seq/2, range/3,
     % files and directories
@@ -54,7 +54,7 @@
 :- use_module(library(aggregate)).
 
 % Starlog uses >> (yfx) for method chains.  Declaring it here as well
-% means Shellog chains parse identically with or without Starlog loaded.
+% means Prologshell chains parse identically with or without Starlog loaded.
 :- op(650, yfx, user:(>>)).
 :- op(650, yfx, (>>)).
 
@@ -99,7 +99,7 @@ sh(Cmd, Out) :-
     Cmd =.. [Name|Args],
     length(Args, N),
     N1 is N + 1,
-    (   shellog_command(Name, N1)
+    (   prologshell_command(Name, N1)
     ->  append(Args, [Out], All),
         G =.. [Name|All],
         call(G)
@@ -130,27 +130,27 @@ apply_method(M, In, Out) :-
     append(Args, [In, Out], All),
     G =.. [Name|All],
     length(All, Arity),
-    (   shellog_command(Name, Arity)
+    (   prologshell_command(Name, Arity)
     ->  call(G)
     ;   call(user:G)
     ).
 
-%!  shellog_command(?Name, ?Arity) is nondet.
-%   True if Name/Arity is an exported Shellog command.
-shellog_command(Name, Arity) :-
+%!  prologshell_command(?Name, ?Arity) is nondet.
+%   True if Name/Arity is an exported Prologshell command.
+prologshell_command(Name, Arity) :-
     atom(Name), integer(Arity), !,
     functor(H, Name, Arity),
-    predicate_property(shellog:H, exported),
+    predicate_property(prologshell:H, exported),
     \+ evaluator(Name).
-shellog_command(Name, Arity) :-
-    module_property(shellog, exports(Es)),
+prologshell_command(Name, Arity) :-
+    module_property(prologshell, exports(Es)),
     member(Name/Arity, Es),
     \+ evaluator(Name).
 
 evaluator(sh).
-evaluator(shellog_command).
+evaluator(prologshell_command).
 evaluator(shell_quote).
-evaluator(shellog_starlog).
+evaluator(prologshell_starlog).
 
 		 /*******************************
 		 *          PIPE VALUES         *
@@ -636,7 +636,7 @@ xargs(M, In, Out) :-
 
 %!  run(+Command, -Lines) is det.
 %   Escape hatch: run Command with /bin/sh and return its stdout lines.
-%   Throws shellog_exit(Status, Command) if the exit status is not 0.
+%   Throws prologshell_exit(Status, Command) if the exit status is not 0.
 run(Cmd, Lines) :-
     to_string(Cmd, C),
     run_process(path(sh), ["-c", C], C, Lines).
@@ -649,7 +649,7 @@ run_process(Exe, Args, Label, Lines) :-
     process_wait(Pid, Status),
     (   Status == exit(0)
     ->  lines(S, Lines)
-    ;   throw(error(shellog_exit(Status, Label), _))
+    ;   throw(error(prologshell_exit(Status, Label), _))
     ).
 
 %!  env(+Name, -Value) is det.  "" when unset.
@@ -658,8 +658,8 @@ env(Name, V) :-
     (   getenv(N, V0) -> to_string(V0, V) ; V = "" ).
 
 %!  on(+Host, +Chain, -Out) is det.
-%   Evaluate a Shellog chain on Host ("user@server") over ssh, running
-%   swipl with library(shellog) there.  Host local evaluates here.
+%   Evaluate a Prologshell chain on Host ("user@server") over ssh, running
+%   swipl with library(prologshell) there.  Host local evaluates here.
 %       sh(on("me@web", ls("/var/www") >> grep("html")), Pages)
 on(Host, Chain, Out) :-
     (   local_host(Host)
@@ -685,7 +685,7 @@ local_host("localhost").
 
 remote_goal(Chain, Cmd) :-
     format(string(G),
-           "use_module(library(shellog)),sh(~q,O),write_canonical(O),nl",
+           "use_module(library(prologshell)),sh(~q,O),write_canonical(O),nl",
            [Chain]),
     shell_quote(G, QG),
     atomics_to_string(["swipl -q -g ", QG, " -t halt"], Cmd).
@@ -733,8 +733,8 @@ shell_quote(T, Q) :-
 		 *      STARLOG INTEGRATION     *
 		 *******************************/
 
-%!  shellog_starlog is det.
-%   Register each Shellog command name with Starlog as a value builtin,
+%!  prologshell_starlog is det.
+%   Register each Prologshell command name with Starlog as a value builtin,
 %   using its smallest arity A >= 2 as Name/(A-1), so
 %   X is cat("f") >> grep("a")  calls  cat("f", V), grep("a", V, X).
 %   Only one arity per name is registered: Starlog looks a name up with
@@ -742,13 +742,13 @@ shell_quote(T, Q) :-
 %   would hide the first.  Larger arities (on/4) still work as methods
 %   through Starlog's user-predicate fallback.  Runs automatically when
 %   Starlog is installed; calling it again gives the same registry.
-shellog_starlog :-
+prologshell_starlog :-
     (   current_predicate(starlog:starlog_register_value_builtin/3)
-    ->  findall(Name, ( shellog_command(Name, A), A >= 2 ), Ns0),
+    ->  findall(Name, ( prologshell_command(Name, A), A >= 2 ), Ns0),
         sort(Ns0, Ns),
         forall(member(Name, Ns),
-               ( aggregate_all(min(A), ( shellog_command(Name, A), A >= 2 ), Min),
-                 forall(( shellog_command(Name, A2), A2 >= 2 ),
+               ( aggregate_all(min(A), ( prologshell_command(Name, A), A >= 2 ), Min),
+                 forall(( prologshell_command(Name, A2), A2 >= 2 ),
                         ( B is A2 - 1,
                           starlog:starlog_unregister_value_builtin(Name, B) )),
                  A1 is Min - 1,
@@ -758,9 +758,9 @@ shellog_starlog :-
 
 :- if(exists_source(library(starlog))).
 :- use_module(library(starlog), []).
-:- initialization(shellog_starlog).
+:- initialization(prologshell_starlog).
 :- endif.
 
 :- multifile prolog:error_message//1.
-prolog:error_message(shellog_exit(Status, Cmd)) -->
-    [ 'shellog: ~w failed with ~w'-[Cmd, Status] ].
+prolog:error_message(prologshell_exit(Status, Cmd)) -->
+    [ 'prologshell: ~w failed with ~w'-[Cmd, Status] ].

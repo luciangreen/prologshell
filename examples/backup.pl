@@ -1,4 +1,4 @@
-% backup.pl -- a bash script rewritten in Shellog + Starlog.
+% backup.pl -- a bash script rewritten in Prologshell + Starlog.
 %
 %     Bash:
 %         mkdir -p backup
@@ -9,7 +9,7 @@
 %     Run:  swipl examples/backup.pl DIR
 
 :- use_module(library(starlog)).
-:- use_module(library(shellog)).
+:- use_module(library(prologshell)).
 
 :- initialization(main, main).
 
